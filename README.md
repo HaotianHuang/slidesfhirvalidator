@@ -10,6 +10,8 @@
 3. FHIR .json needn't be the only thing in the text box.
 4. Appends error messages to speaker notes section.
 
+![Screenshot of slidesfhirvalidator](demo.png)
+
 ## Usage
 
 1. Go to Google's App Script [portal](https://script.google.com/home/).
