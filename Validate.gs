@@ -1,6 +1,14 @@
-// Description: This script is responsible for validating FHIR objects in Google Slides.
+/**
+ *  Description: This script is responsible for validating FHIR objects in Google Slides.
+ *  Usage: Configure presentationId to desired presentation then >RUN.
+ *  Script: Searches and validates textboxes containing JSON representations of FHIR within your presentation.
+ *  Result: Errors are logged in speaker notes.
+*/ 
+
 // Constants to be used throughout the script
+// Edit presentationId to match desired presentationId. Find it here https://developers.google.com/slides/api/guides/overview
 const sourceUrl = 'https://inferno.healthit.gov/validatorapi/validate?';
+const presentationId = '1HZNRC-nJhgW-hyvXBgCecmrBHT6oCRCosCBMMO0O9Zg';
 
 class ErrorManager {
     /**
@@ -55,8 +63,8 @@ class ObjManager {
     */
 
     constructor(){
-    this.objDict = {}
-    this.slides = SlidesApp.getActivePresentation().getSlides();
+      this.objDict = {}
+      this.slides = SlidesApp.openById(presentationId).getSlides();
     }
 
     init(){
@@ -114,7 +122,7 @@ class ObjManager {
 const errormanager = new ErrorManager();
 const objmanager = new ObjManager();
 
-async function main(tests = true){
+async function main(tests = false){
     /**
      * Description: The main function is responsible for orchestrating the initialization of the object manager and error manager and running the validation.
      * Args:
@@ -125,25 +133,25 @@ async function main(tests = true){
 
     if (tests) { testsLive(); }
 
-    // objmanager.init();
-    // for (var i = 0; i < objmanager.slides.length; i++){ 
-    // let currentSlide = objmanager.slides[i];
-    // let slideId = objmanager.slides[i].getObjectId();
-    // var strArray = objmanager.objDict[slideId];
-    // try{
-    //     if (objmanager.objDict[slideId] != []){
-    //         for (var n = 0; n < strArray.length; n++){
-    //         let response = await validate(slideId, strArray[n]);
-    //         responseToError(response).map((x) => errormanager.log(slideId, x));
-    //         }
-    //     }
-    // } catch (err){  
-    // } finally {
-    //     if (errormanager.errorDict[slideId] != [] && errormanager.errorDict[slideId] != null){
-    //     errormanager.insertError(currentSlide, slideId, errormanager.errorDict);
-    //     }
-    // }
-    // }
+    objmanager.init();
+    for (var i = 0; i < objmanager.slides.length; i++){ 
+    let currentSlide = objmanager.slides[i];
+    let slideId = objmanager.slides[i].getObjectId();
+    var strArray = objmanager.objDict[slideId];
+    try{
+        if (objmanager.objDict[slideId] != []){
+            for (var n = 0; n < strArray.length; n++){
+            let response = await validate(slideId, strArray[n]);
+            responseToError(response).map((x) => errormanager.log(slideId, x));
+            }
+        }
+    } catch (err){  
+    } finally {
+        if (errormanager.errorDict[slideId] != [] && errormanager.errorDict[slideId] != null){
+        errormanager.insertError(currentSlide, slideId, errormanager.errorDict);
+        }
+    }
+    }
 }
  
 async function validate(slideId, myObjectString) {
@@ -271,6 +279,79 @@ function getParameterByName(name, url) {
     if (!results[2]) return '';
     return decodeURIComponent(results[2].replace(/\+/g, ' '));
 }
+
+/************************
+ * TESTS : OPTIONAL
+ ************************/
+
+/**
+ * Class for running unit tests
+ */
+
+ let UnitTestingApp = (function () {
+
+  const _enabled = new WeakMap();
+  const _runningInGas = new WeakMap();
+
+  class UnitTestingApp {
+    constructor() {
+      if (UnitTestingApp.instance) return UnitTestingApp.instance;
+      
+      _enabled.set(this, false);
+      _runningInGas.set(this, false);
+      UnitTestingApp.instance = this;
+      
+      return UnitTestingApp.instance;
+    }
+
+    enable() {
+      _enabled.set(this, true);
+    }
+
+    disable() {
+      _enabled.set(this, false);
+    }
+    
+    get isEnabled() {
+      return _enabled.get(this);      
+    }
+
+    get isInGas() {
+      return typeof ScriptApp !== 'undefined';
+    }
+
+    get runningInGas() {
+      return _runningInGas.get(this);
+    }
+
+    runInGas(bool = true) {
+      _runningInGas.set(this, bool);
+    }
+
+    clearConsole() {
+      if (console.clear) console.clear();
+    }
+
+    /**
+     * Tests whether conditions pass or not
+     * @param {Boolean | Function} condition - The condition to check
+     * @param {String} message - the message to display in the console
+     * @return {void}
+     */
+    assert(condition, message) {
+      if(!_enabled.get(this)) return;
+      if(this.isInGas !== this.runningInGas) return;
+      try {
+        if ("function" === typeof condition) condition = condition();
+        if (condition) console.log(`✔ PASSED: ${message}`);
+        else console.log(`❌ FAILED: ${message}`);
+      } catch(err) {
+        console.log(`❌ FAILED: ${message} (${err})`);
+      }
+    }
+  }
+  return UnitTestingApp;
+})();
 
 function testsLive(){
     /**
